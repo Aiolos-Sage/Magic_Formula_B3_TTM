@@ -1,4 +1,5 @@
-import pandas as pd
+# Final deployment-ready script with debug logging and only "AAPL" as the ticker
+final_script_debug = """import pandas as pd
 import streamlit as st
 import requests
 import plotly.express as px
@@ -10,20 +11,7 @@ language = st.sidebar.selectbox("🌐 Escolha o idioma / Select language", ["PT-
 
 # === Configuration ===
 API_KEY = st.secrets["API_KEY"]
-TICKERS = [
-    "LEVE3.SA", "CMIN3.SA", "AURE3.SA", "VULC3.SA", "PETR4.SA", "BRAP3.SA", "CSMG3.SA",
-    "CMIG4.SA", "CMIG3.SA", "VALE3.SA", "BBDC3.SA", "GOAU4.SA", "RECV3.SA", "TAEE11.SA",
-    "BBAS3.SA", "ISAE4.SA", "CPFE3.SA", "ROMI3.SA", "RANI3.SA", "BBSE3.SA", "KEPL3.SA",
-    "ITUB3.SA", "VBBR3.SA", "ABCB4.SA", "CURY3.SA", "LAVV3.SA", "JHSF3.SA", "UNIP6.SA",
-    "AGRO3.SA", "EGIE3.SA", "SANB4.SA", "ALOS3.SA", "CXSE3.SA", "ITSA4.SA", "GRND3.SA",
-    "POMO4.SA", "ABEV3.SA", "FESA4.SA", "VAMO3.SA", "JBSS3.SA", "FLRY3.SA", "SAPR4.SA",
-    "SLCE3.SA", "VIVT3.SA", "GGBR4.SA", "BRSR6.SA", "RAPT4.SA", "KLBN4.SA", "AURA33.SA",
-    "ALUP11.SA", "NEOE3.SA", "USIM3.SA", "WIZC3.SA", "CYRE3.SA", "PSSA3.SA", "CSNA3.SA",
-    "CSAN3.SA", "B3SA3.SA", "SMTO3.SA", "RENT3.SA", "MULT3.SA", "TASA4.SA", "DXCO3.SA",
-    "MDIA3.SA", "CPLE3.SA", "BLAU3.SA", "RDOR3.SA", "SUZB3.SA", "TUPY3.SA", "WEGE3.SA",
-    "ELET3.SA", "RAIL3.SA", "PRIO3.SA", "DASA3.SA", "BRKM5.SA", "CGAS3.SA", "MRFG3.SA",
-    "STBP3.SA", "PETZ3.SA"
-]
+TICKERS = ["AAPL"]  # Using only AAPL for debug
 
 # === Data Fetcher ===
 def get_financial_data(ticker):
@@ -31,6 +19,7 @@ def get_financial_data(ticker):
         url = f"https://financialmodelingprep.com/api/v3/key-metrics-ttm?symbol={ticker}&apikey={API_KEY}"
         response = requests.get(url).json()
         if not response:
+            st.warning(f"No data for {ticker} — check symbol or API response.")
             return {"Ticker": ticker, "EarningsYield": None, "ROIC": None, "WeightedScore": None}
         metrics = response[0]
         ey = metrics.get("earningsYieldTTM")
@@ -44,13 +33,14 @@ def get_financial_data(ticker):
             "ROIC": roic_pct,
             "WeightedScore": score
         }
-    except:
+    except Exception as e:
+        st.error(f"Error for {ticker}: {e}")
         return {"Ticker": ticker, "EarningsYield": None, "ROIC": None, "WeightedScore": None}
 
 # === UI Content ===
 st.title("📈 Magic Formula - B3 Stocks (TTM)")
 st.caption("Data provided by Financial Modeling Prep API")
-st.markdown("""
+st.markdown(\"\"\"
 ### 🧠 Magic Formula Logic
 Created by Joel Greenblatt, this strategy aims to find companies that are both **cheap and profitable**.
 
@@ -58,7 +48,7 @@ Created by Joel Greenblatt, this strategy aims to find companies that are both *
 - **ROIC** (Return on Invested Capital): measures how efficiently a company generates profits from its capital.
 
 📐 **Score = (Earnings Yield × 1.0) + (ROIC × 0.2)**
-""")
+\"\"\")
 
 # === Data Load and Ranking ===
 data = pd.DataFrame([get_financial_data(ticker) for ticker in TICKERS])
@@ -93,3 +83,10 @@ fig3 = px.bar(data.head(20), x="Ticker", y="WeightedScore", title="Top 20 by Sco
               labels={"WeightedScore": "Score"}, template="plotly_white")
 fig3.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig3, use_container_width=True)
+"""
+
+# Save the updated debug script with only AAPL
+file_path = Path("/mnt/data/Magic_Formula_B3_TTM.py")
+file_path.write_text(final_script_debug)
+
+str(file_path)
