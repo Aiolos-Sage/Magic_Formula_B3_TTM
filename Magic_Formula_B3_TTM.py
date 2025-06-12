@@ -22,7 +22,7 @@ TICKERS = [
     "CSAN3.SA", "B3SA3.SA", "SMTO3.SA", "RENT3.SA", "MULT3.SA", "TASA4.SA", "DXCO3.SA",
     "MDIA3.SA", "CPLE3.SA", "BLAU3.SA", "RDOR3.SA", "SUZB3.SA", "TUPY3.SA", "WEGE3.SA",
     "ELET3.SA", "RAIL3.SA", "PRIO3.SA", "DASA3.SA", "BRKM5.SA", "CGAS3.SA", "MRFG3.SA",
-    "STBP3.SA", "PETZ3.SA"
+    "STBP3.SA", "PETZ3.SA", "MSFT", "AMZN",
 ]
 
 # === Data Fetcher ===
