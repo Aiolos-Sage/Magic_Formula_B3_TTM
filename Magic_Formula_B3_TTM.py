@@ -1,4 +1,5 @@
-import pandas as pd
+# Script rewritten to use ratios-ttm endpoint instead of key-metrics-ttm
+ratios_ttm_script = """import pandas as pd
 import streamlit as st
 import requests
 import plotly.express as px
@@ -10,19 +11,20 @@ language = st.sidebar.selectbox("🌐 Escolha o idioma / Select language", ["PT-
 
 # === Configuration ===
 API_KEY = st.secrets["API_KEY"]
-TICKERS = ["AAPL"]  # Using only AAPL for debug
+TICKERS = ["AAPL"]
 
-# === Data Fetcher ===
+# === Data Fetcher using ratios-ttm
 def get_financial_data(ticker):
     try:
-        url = f"https://financialmodelingprep.com/api/v3/key-metrics-ttm?symbol={ticker}&apikey={API_KEY}"
+        url = f"https://financialmodelingprep.com/api/v3/ratios-ttm?symbol={ticker}&apikey={API_KEY}"
         response = requests.get(url).json()
         if not response:
             st.warning(f"No data for {ticker} — check symbol or API response.")
             return {"Ticker": ticker, "EarningsYield": None, "ROIC": None, "WeightedScore": None}
-        metrics = response[0]
-        ey = metrics.get("earningsYieldTTM")
-        roic = metrics.get("returnOnInvestedCapitalTTM")
+        ratios = response[0]
+        pe = ratios.get("priceEarningsRatioTTM")
+        roic = ratios.get("returnOnInvestedCapitalTTM")
+        ey = 1 / pe if pe and pe != 0 else None
         ey_pct = ey * 100 if ey is not None else None
         roic_pct = roic * 100 if roic is not None else None
         score = ey_pct * 1.0 + roic_pct * 0.2 if ey_pct is not None and roic_pct is not None else None
@@ -39,15 +41,15 @@ def get_financial_data(ticker):
 # === UI Content ===
 st.title("📈 Magic Formula - B3 Stocks (TTM)")
 st.caption("Data provided by Financial Modeling Prep API")
-st.markdown("""
+st.markdown(\"\"\"
 ### 🧠 Magic Formula Logic
 Created by Joel Greenblatt, this strategy aims to find companies that are both **cheap and profitable**.
 
-- **Earnings Yield (EY)**: shows how cheap a stock is based on operating earnings.
-- **ROIC** (Return on Invested Capital): measures how efficiently a company generates profits from its capital.
+- **Earnings Yield (EY)**: estimated as 1 / P/E ratio
+- **ROIC** (Return on Invested Capital): how efficiently a company generates profits from capital
 
 📐 **Score = (Earnings Yield × 1.0) + (ROIC × 0.2)**
-""")
+\"\"\")
 
 # === Data Load and Ranking ===
 data = pd.DataFrame([get_financial_data(ticker) for ticker in TICKERS])
@@ -82,3 +84,10 @@ fig3 = px.bar(data.head(20), x="Ticker", y="WeightedScore", title="Top 20 by Sco
               labels={"WeightedScore": "Score"}, template="plotly_white")
 fig3.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig3, use_container_width=True)
+"""
+
+# Save the file
+file_path = Path("/mnt/data/Magic_Formula_B3_TTM.py")
+file_path.write_text(ratios_ttm_script)
+
+str(file_path)
