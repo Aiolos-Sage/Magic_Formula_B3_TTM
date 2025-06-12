@@ -1,7 +1,5 @@
-from pathlib import Path
-
-# Recreate the corrected script after code state reset
-corrected_script = """import pandas as pd
+# Save the final deployment-ready script without file-writing operations
+final_script = """import pandas as pd
 import streamlit as st
 import requests
 import plotly.express as px
@@ -34,29 +32,21 @@ def get_financial_data(ticker):
         url = f"https://financialmodelingprep.com/api/v3/key-metrics-ttm?symbol={ticker}&apikey={API_KEY}"
         response = requests.get(url).json()
         if not response:
-            raise ValueError("Empty response")
-
+            return {"Ticker": ticker, "EarningsYield": None, "ROIC": None, "WeightedScore": None}
         metrics = response[0]
-        ey = metrics.get("earningsYieldTTM", None)
-        roic = metrics.get("returnOnInvestedCapitalTTM", None)
-
+        ey = metrics.get("earningsYieldTTM")
+        roic = metrics.get("returnOnInvestedCapitalTTM")
         ey_pct = ey * 100 if ey is not None else None
         roic_pct = roic * 100 if roic is not None else None
-        weighted_score = (ey_pct * 1.0 + roic_pct * 0.2) if ey_pct is not None and roic_pct is not None else None
-
+        score = ey_pct * 1.0 + roic_pct * 0.2 if ey_pct is not None and roic_pct is not None else None
         return {
             "Ticker": ticker,
             "EarningsYield": ey_pct,
             "ROIC": roic_pct,
-            "WeightedScore": weighted_score
+            "WeightedScore": score
         }
-    except Exception:
-        return {
-            "Ticker": ticker,
-            "EarningsYield": None,
-            "ROIC": None,
-            "WeightedScore": None
-        }
+    except:
+        return {"Ticker": ticker, "EarningsYield": None, "ROIC": None, "WeightedScore": None}
 
 # === UI Content ===
 st.title("📈 Magic Formula - B3 Stocks (TTM)")
@@ -77,56 +67,37 @@ data = data.dropna(subset=["WeightedScore"])
 data = data.sort_values(by="WeightedScore", ascending=False).reset_index(drop=True)
 data["MagicFormulaRank"] = data.index + 1
 
-# === Table ===
-display = data[[
-    "Ticker", "EarningsYield", "ROIC", "WeightedScore", "MagicFormulaRank"
-]].copy()
+# === Table Display ===
+display = data[["Ticker", "EarningsYield", "ROIC", "WeightedScore", "MagicFormulaRank"]].copy()
 display["EarningsYield"] = display["EarningsYield"].apply(lambda x: f"{x:.1f}%" if x is not None else "N/A")
 display["ROIC"] = display["ROIC"].apply(lambda x: f"{x:.1f}%" if x is not None else "N/A")
 display["WeightedScore"] = display["WeightedScore"].apply(lambda x: f"{x:.1f}" if x is not None else "N/A")
-
 st.dataframe(display, use_container_width=True)
 
 # === Charts ===
 col1, col2 = st.columns(2)
-
 with col1:
     st.markdown("### 📊 EY vs ROIC Scatterplot")
-    fig_scatter = px.scatter(
-        data, x="EarningsYield", y="ROIC", text="Ticker",
-        title="EY vs ROIC Scatterplot",
-        labels={"EarningsYield": "EY (%)", "ROIC": "ROIC (%)"},
-        template="plotly_dark"
-    )
-    fig_scatter.update_traces(textposition='top center')
-    st.plotly_chart(fig_scatter, use_container_width=True)
+    fig1 = px.scatter(data, x="EarningsYield", y="ROIC", text="Ticker", title="EY vs ROIC",
+                      labels={"EarningsYield": "EY (%)", "ROIC": "ROIC (%)"}, template="plotly_dark")
+    fig1.update_traces(textposition="top center")
+    st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
     st.markdown("### 🔥 Heatmap by Score (Top 20)")
-    heat_data = data.head(20).set_index("Ticker")[["EarningsYield", "ROIC", "WeightedScore"]].T
-    fig_heatmap = px.imshow(
-        heat_data,
-        text_auto=".1f",
-        color_continuous_scale="Blues",
-        aspect="auto",
-        title="Metric Heatmap"
-    )
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+    heatmap_data = data.head(20).set_index("Ticker")[["EarningsYield", "ROIC", "WeightedScore"]].T
+    fig2 = px.imshow(heatmap_data, text_auto=".1f", color_continuous_scale="Blues", aspect="auto")
+    st.plotly_chart(fig2, use_container_width=True)
 
 st.markdown("### 🏅 Top 20 Companies - Weighted Score")
-top20 = data.head(20)
-fig_bar = px.bar(
-    top20, x="Ticker", y="WeightedScore",
-    title="Top 20 by Weighted Score",
-    labels={"WeightedScore": "Score"},
-    template="plotly_white"
-)
-fig_bar.update_layout(xaxis_tickangle=-45)
-st.plotly_chart(fig_bar, use_container_width=True)
+fig3 = px.bar(data.head(20), x="Ticker", y="WeightedScore", title="Top 20 by Score",
+              labels={"WeightedScore": "Score"}, template="plotly_white")
+fig3.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig3, use_container_width=True)
 """
 
-# Save to file
-script_path = Path("/mnt/data/Magic_Formula_B3_TTM_Corrected.py")
-script_path.write_text(corrected_script)
+# Save final script for download
+final_path = Path("/mnt/data/Magic_Formula_B3_TTM_Final.py")
+final_path.write_text(final_script)
 
-str(script_path)
+str(final_path)
