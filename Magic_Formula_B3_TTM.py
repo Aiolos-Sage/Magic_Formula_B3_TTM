@@ -1,4 +1,7 @@
-import pandas as pd
+from pathlib import Path
+
+# Recreate the corrected script after code state reset
+corrected_script = """import pandas as pd
 import streamlit as st
 import requests
 import plotly.express as px
@@ -22,20 +25,20 @@ TICKERS = [
     "CSAN3.SA", "B3SA3.SA", "SMTO3.SA", "RENT3.SA", "MULT3.SA", "TASA4.SA", "DXCO3.SA",
     "MDIA3.SA", "CPLE3.SA", "BLAU3.SA", "RDOR3.SA", "SUZB3.SA", "TUPY3.SA", "WEGE3.SA",
     "ELET3.SA", "RAIL3.SA", "PRIO3.SA", "DASA3.SA", "BRKM5.SA", "CGAS3.SA", "MRFG3.SA",
-    "STBP3.SA", "PETZ3.SA", "MSFT", "AMZN",
+    "STBP3.SA", "PETZ3.SA"
 ]
 
 # === Data Fetcher ===
 def get_financial_data(ticker):
     try:
-        url = f"https://financialmodelingprep.com/api/v3/ratios-ttm/{ticker}?apikey={API_KEY}"
+        url = f"https://financialmodelingprep.com/api/v3/key-metrics-ttm?symbol={ticker}&apikey={API_KEY}"
         response = requests.get(url).json()
         if not response:
             raise ValueError("Empty response")
 
         metrics = response[0]
-        ey = metrics.get("earningYield", None)
-        roic = metrics.get("returnOnCapitalEmployed", None)
+        ey = metrics.get("earningsYieldTTM", None)
+        roic = metrics.get("returnOnInvestedCapitalTTM", None)
 
         ey_pct = ey * 100 if ey is not None else None
         roic_pct = roic * 100 if roic is not None else None
@@ -43,7 +46,6 @@ def get_financial_data(ticker):
 
         return {
             "Ticker": ticker,
-            "ReportDate": metrics.get("date"),
             "EarningsYield": ey_pct,
             "ROIC": roic_pct,
             "WeightedScore": weighted_score
@@ -51,47 +53,23 @@ def get_financial_data(ticker):
     except Exception:
         return {
             "Ticker": ticker,
-            "ReportDate": None,
             "EarningsYield": None,
             "ROIC": None,
             "WeightedScore": None
         }
 
 # === UI Content ===
-if language == "PT-BR":
-    st.title("📈 Fórmula Mágica - Ações B3 (TTM)")
-    st.caption("Dados por Financial Modeling Prep API")
-    st.markdown("""
-    ### 🧠 Lógica da Fórmula Mágica
-    Criada por Joel Greenblatt, essa estratégia busca identificar empresas **baratas e lucrativas**.
+st.title("📈 Magic Formula - B3 Stocks (TTM)")
+st.caption("Data provided by Financial Modeling Prep API")
+st.markdown(\"\"\"
+### 🧠 Magic Formula Logic
+Created by Joel Greenblatt, this strategy aims to find companies that are both **cheap and profitable**.
 
-    - **Earnings Yield (EY)**: mostra o quão barata está uma ação com base no lucro operacional.
-    - **ROIC** (Retorno sobre Capital Investido): mede a eficiência da empresa ao usar seu capital para gerar lucros.
+- **Earnings Yield (EY)**: shows how cheap a stock is based on operating earnings.
+- **ROIC** (Return on Invested Capital): measures how efficiently a company generates profits from its capital.
 
-    A pontuação final dá **peso maior para ações baratas**, sem ignorar qualidade.
-
-    📐 **Fórmula usada para ranqueamento:**
-    ```
-    Pontuação = (Earnings Yield × 1.0) + (ROIC × 0.2)
-    ```
-    """)
-else:
-    st.title("📈 Magic Formula - B3 Stocks (TTM)")
-    st.caption("Data provided by Financial Modeling Prep API")
-    st.markdown("""
-    ### 🧠 Magic Formula Logic
-    Created by Joel Greenblatt, this strategy aims to find companies that are both **cheap and profitable**.
-
-    - **Earnings Yield (EY)**: shows how cheap a stock is based on operating earnings.
-    - **ROIC** (Return on Invested Capital): measures how efficiently a company generates profits from its capital.
-
-    The final score **gives more weight to cheapness**, while still rewarding quality.
-
-    📐 **Scoring formula used for ranking:**
-    ```
-    Score = (Earnings Yield × 1.0) + (ROIC × 0.2)
-    ```
-    """)
+📐 **Score = (Earnings Yield × 1.0) + (ROIC × 0.2)**
+\"\"\")
 
 # === Data Load and Ranking ===
 data = pd.DataFrame([get_financial_data(ticker) for ticker in TICKERS])
@@ -99,9 +77,9 @@ data = data.dropna(subset=["WeightedScore"])
 data = data.sort_values(by="WeightedScore", ascending=False).reset_index(drop=True)
 data["MagicFormulaRank"] = data.index + 1
 
-# === Full Width Table ===
+# === Table ===
 display = data[[
-    "Ticker", "ReportDate", "EarningsYield", "ROIC", "WeightedScore", "MagicFormulaRank"
+    "Ticker", "EarningsYield", "ROIC", "WeightedScore", "MagicFormulaRank"
 ]].copy()
 display["EarningsYield"] = display["EarningsYield"].apply(lambda x: f"{x:.1f}%" if x is not None else "N/A")
 display["ROIC"] = display["ROIC"].apply(lambda x: f"{x:.1f}%" if x is not None else "N/A")
@@ -109,14 +87,14 @@ display["WeightedScore"] = display["WeightedScore"].apply(lambda x: f"{x:.1f}" i
 
 st.dataframe(display, use_container_width=True)
 
-# === Interactive Charts ===
+# === Charts ===
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("### 📊 Dispersão EY vs ROIC" if language == "PT-BR" else "### 📊 EY vs ROIC Scatterplot")
+    st.markdown("### 📊 EY vs ROIC Scatterplot")
     fig_scatter = px.scatter(
         data, x="EarningsYield", y="ROIC", text="Ticker",
-        title="Dispersão EY vs ROIC" if language == "PT-BR" else "EY vs ROIC Scatterplot",
+        title="EY vs ROIC Scatterplot",
         labels={"EarningsYield": "EY (%)", "ROIC": "ROIC (%)"},
         template="plotly_dark"
     )
@@ -124,25 +102,31 @@ with col1:
     st.plotly_chart(fig_scatter, use_container_width=True)
 
 with col2:
-    st.markdown("### 🔥 Mapa de Calor por Pontuação (Top 20)" if language == "PT-BR" else "### 🔥 Heatmap by Score (Top 20)")
+    st.markdown("### 🔥 Heatmap by Score (Top 20)")
     heat_data = data.head(20).set_index("Ticker")[["EarningsYield", "ROIC", "WeightedScore"]].T
     fig_heatmap = px.imshow(
         heat_data,
         text_auto=".1f",
         color_continuous_scale="Blues",
         aspect="auto",
-        title="Mapa de Calor por Métrica" if language == "PT-BR" else "Metric Heatmap"
+        title="Metric Heatmap"
     )
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
-# === Full Width Bar Chart ===
-st.markdown("### 🏅 Top 20 Empresas - Pontuação Total" if language == "PT-BR" else "### 🏅 Top 20 Companies - Weighted Score")
+st.markdown("### 🏅 Top 20 Companies - Weighted Score")
 top20 = data.head(20)
 fig_bar = px.bar(
     top20, x="Ticker", y="WeightedScore",
-    title="Top 20 por Pontuação Final" if language == "PT-BR" else "Top 20 by Weighted Score",
-    labels={"WeightedScore": "Pontuação" if language == "PT-BR" else "Score"},
+    title="Top 20 by Weighted Score",
+    labels={"WeightedScore": "Score"},
     template="plotly_white"
 )
 fig_bar.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_bar, use_container_width=True)
+"""
+
+# Save to file
+script_path = Path("/mnt/data/Magic_Formula_B3_TTM_Corrected.py")
+script_path.write_text(corrected_script)
+
+str(script_path)
