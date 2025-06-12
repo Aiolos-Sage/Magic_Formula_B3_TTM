@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+venv/
+*.sqlite3
+
+# Jupyter
+.ipynb_checkpoints
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS Files
+.DS_Store
+Thumbs.db
