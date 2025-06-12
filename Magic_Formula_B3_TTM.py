@@ -1,4 +1,11 @@
-import pandas as pd
+from pathlib import Path
+
+# Create directory
+project_dir = Path("/mnt/data/Magic_Formula_B3_TTM")
+project_dir.mkdir(parents=True, exist_ok=True)
+
+# Full corrected script with ratios-ttm endpoint
+full_script = """import pandas as pd
 import streamlit as st
 import requests
 import plotly.express as px
@@ -28,14 +35,14 @@ TICKERS = [
 # === Data Fetcher ===
 def get_financial_data(ticker):
     try:
-        income_url = f"https://financialmodelingprep.com/api/v3/income-statement/{ticker}?period=ttm&limit=1&apikey={API_KEY}"
-        keymetrics_url = f"https://financialmodelingprep.com/api/v3/key-metrics/{ticker}?period=ttm&limit=1&apikey={API_KEY}"
+        url = f"https://financialmodelingprep.com/api/v3/ratios-ttm/{ticker}?apikey={API_KEY}"
+        response = requests.get(url).json()
+        if not response:
+            raise ValueError("Empty response")
 
-        income = requests.get(income_url).json()[0]
-        metrics = requests.get(keymetrics_url).json()[0]
-
-        ey = metrics.get("earningsYield", None)
-        roic = metrics.get("roic", None)
+        metrics = response[0]
+        ey = metrics.get("earningYield", None)
+        roic = metrics.get("returnOnCapitalEmployed", None)
 
         ey_pct = ey * 100 if ey is not None else None
         roic_pct = roic * 100 if roic is not None else None
@@ -43,7 +50,7 @@ def get_financial_data(ticker):
 
         return {
             "Ticker": ticker,
-            "ReportDate": income.get("date"),
+            "ReportDate": metrics.get("date"),
             "EarningsYield": ey_pct,
             "ROIC": roic_pct,
             "WeightedScore": weighted_score
@@ -61,7 +68,7 @@ def get_financial_data(ticker):
 if language == "PT-BR":
     st.title("📈 Fórmula Mágica - Ações B3 (TTM)")
     st.caption("Dados por Financial Modeling Prep API")
-    st.markdown("""
+    st.markdown(\"\"\"
     ### 🧠 Lógica da Fórmula Mágica
     Criada por Joel Greenblatt, essa estratégia busca identificar empresas **baratas e lucrativas**.
 
@@ -74,11 +81,11 @@ if language == "PT-BR":
     ```
     Pontuação = (Earnings Yield × 1.0) + (ROIC × 0.2)
     ```
-    """)
+    \"\"\")
 else:
     st.title("📈 Magic Formula - B3 Stocks (TTM)")
     st.caption("Data provided by Financial Modeling Prep API")
-    st.markdown("""
+    st.markdown(\"\"\"
     ### 🧠 Magic Formula Logic
     Created by Joel Greenblatt, this strategy aims to find companies that are both **cheap and profitable**.
 
@@ -91,7 +98,7 @@ else:
     ```
     Score = (Earnings Yield × 1.0) + (ROIC × 0.2)
     ```
-    """)
+    \"\"\")
 
 # === Data Load and Ranking ===
 data = pd.DataFrame([get_financial_data(ticker) for ticker in TICKERS])
@@ -146,3 +153,10 @@ fig_bar = px.bar(
 )
 fig_bar.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_bar, use_container_width=True)
+"""
+
+# Save to file
+script_path = project_dir / "Magic_Formula_B3_TTM.py"
+script_path.write_text(full_script)
+
+str(script_path)
