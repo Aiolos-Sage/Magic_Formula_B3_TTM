@@ -1,5 +1,4 @@
-# Script rewritten to use ratios-ttm endpoint instead of key-metrics-ttm
-ratios_ttm_script = """import pandas as pd
+import pandas as pd
 import streamlit as st
 import requests
 import plotly.express as px
@@ -41,7 +40,7 @@ def get_financial_data(ticker):
 # === UI Content ===
 st.title("📈 Magic Formula - B3 Stocks (TTM)")
 st.caption("Data provided by Financial Modeling Prep API")
-st.markdown(\"\"\"
+st.markdown("""
 ### 🧠 Magic Formula Logic
 Created by Joel Greenblatt, this strategy aims to find companies that are both **cheap and profitable**.
 
@@ -49,7 +48,7 @@ Created by Joel Greenblatt, this strategy aims to find companies that are both *
 - **ROIC** (Return on Invested Capital): how efficiently a company generates profits from capital
 
 📐 **Score = (Earnings Yield × 1.0) + (ROIC × 0.2)**
-\"\"\")
+""")
 
 # === Data Load and Ranking ===
 data = pd.DataFrame([get_financial_data(ticker) for ticker in TICKERS])
@@ -84,10 +83,3 @@ fig3 = px.bar(data.head(20), x="Ticker", y="WeightedScore", title="Top 20 by Sco
               labels={"WeightedScore": "Score"}, template="plotly_white")
 fig3.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig3, use_container_width=True)
-"""
-
-# Save the file
-file_path = Path("/mnt/data/Magic_Formula_B3_TTM.py")
-file_path.write_text(ratios_ttm_script)
-
-str(file_path)
